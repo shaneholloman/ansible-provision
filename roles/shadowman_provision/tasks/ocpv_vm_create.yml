@@ -17,8 +17,11 @@
       environment: "{{ env }}"
       operating_system: "{{ operating_system_tag }}"
       owner: "{{ owner.split('@')[0] }}"
+      network.kubevirt.io/headlessService: headless
     instancetype:
-      name: u1.mediumlarge
+      name: u1.2xmedium
+    preference:
+      name: rhel.10
     data_volume_templates:
       - metadata:
           name: "{{ item }}"
@@ -31,31 +34,34 @@
             resources:
               requests:
                 storage: 50Gi
+            storageClassName: thin-csi
     spec:
       architecture: amd64
       domain:
         devices:
           disks:
-            - disk:
-                bus: virtio
+            - bootOrder: 1
               name: rootdisk
             - disk:
                 bus: virtio
               name: cloudinitdisk
           interfaces:
             - bridge: {}
+              name: externalnetwork
+              state: up
+            - bridge: {}
               model: virtio
               name: default
-          rng: {}
         machine:
-          type: pc-q35-rhel9.4.0
+          type: pc-q35-rhel9.6.0
         resources: {}
-      evictionStrategy: None
       networks:
         - multus:
             networkName: default/ovs-ens35
-          name: default
-      terminationGracePeriodSeconds: 180
+          name: externalnetwork
+        - name: default
+          pod: {}
+      subdomain: headless
       volumes:
         - dataVolume:
             name: "{{ item }}"
