@@ -2,7 +2,13 @@
 - name: Change facts if running Windows
   ansible.builtin.set_fact:
     operating_system_tag: "Windows"
+    ocp_preference: "windows.2025"
   when: operating_system is match("Win.*")
+
+- name: Change facts if running RHEL9
+  ansible.builtin.set_fact:
+    ocp_preference: "rhel.9"
+  when: operating_system == "RHEL9"
 
 - name: Create and run Linux VM
   redhat.openshift_virtualization.kubevirt_vm:
@@ -21,7 +27,7 @@
     instancetype:
       name: u1.2xmedium
     preference:
-      name: rhel.10
+      name: "{{ ocp_preference }}"
     data_volume_templates:
       - metadata:
           name: "{{ item }}"
