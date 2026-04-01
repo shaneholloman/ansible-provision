@@ -92,7 +92,7 @@
       apiVersion: v1
       data:
         unattend.xml: |-
-          {{ lookup('template', 'unattended.xml.j2') }}
+          {{ lookup('template', 'templates/unattended.xml.j2') }}
       kind: ConfigMap
       metadata:
         name: sysprep-{{ item }}
