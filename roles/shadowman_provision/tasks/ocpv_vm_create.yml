@@ -85,7 +85,23 @@
   loop: "{{ vm_names }}"
   when: operating_system is match("RHEL.*")
 
-- name: Create Windows virtual machine
+- name: Create ConfigMap for unattend.xml
+  kubernetes.core.k8s:
+    validate_certs: false
+    resource_definition:
+      apiVersion: v1
+      data:
+        unattend.xml: |-
+          {{ lookup('template', 'unattended.xml.j2') }}
+      kind: ConfigMap
+      metadata:
+        name: sysprep-{{ item }}
+        namespace: openshiftvms
+    state: present
+  loop: "{{ vm_names }}"
+  when: operating_system is match("Win.*")
+
+- name: Create and run Windows VM
   redhat.openshift_virtualization.kubevirt_vm:
     state: present
     wait: true
@@ -98,23 +114,36 @@
       environment: "{{ env }}"
       operating_system: "{{ operating_system_tag }}"
       owner: "{{ owner.split('@')[0] }}"
-    instancetype:
-      name: u1.mediumlarge
+      network.kubevirt.io/headlessService: headless
     data_volume_templates:
       - metadata:
           name: "{{ item }}"
         spec:
           sourceRef:
             kind: DataSource
-            name: "{{ operating_system | lower }}"
+            name: win2k25
             namespace: openshift-virtualization-os-images
           storage:
             resources:
               requests:
-                storage: 50Gi
+                storage: 64Gi
     spec:
       architecture: amd64
       domain:
+        clock:
+          timer:
+            hpet:
+              present: false
+            hyperv: {}
+            pit:
+              tickPolicy: delay
+            rtc:
+              tickPolicy: catchup
+          utc: {}
+        cpu:
+          cores: 1
+          sockets: 2
+          threads: 1
         devices:
           disks:
             - disk:
@@ -123,22 +152,55 @@
             - cdrom:
                 bus: sata
               name: sysprep
-            - cdrom:
-                bus: sata
-              name: winrm
+          inputs:
+            - bus: usb
+              name: tablet
+              type: tablet
           interfaces:
-            - bridge: {}
+            - masquerade: {}
               model: e1000e
               name: default
+            - bridge: {}
+              model: e1000e
+              name: externalnetwork
+              state: up
+          tpm:
+            persistent: true
+        features:
+          acpi: {}
+          apic: {}
+          hyperv:
+            reenlightenment: {}
+            ipi: {}
+            synic: {}
+            synictimer:
+              direct: {}
+            spinlocks:
+              spinlocks: 8191
+            reset: {}
+            relaxed: {}
+            vpindex: {}
+            runtime: {}
+            tlbflush: {}
+            frequencies: {}
+            vapic: {}
+          smm: {}
+        firmware:
+          bootloader:
+            efi:
+              persistent: true
+              secureBoot: true
         machine:
-          type: pc-q35-rhel9.4.0
+          type: pc-q35-rhel9.6.0
+        memory:
+          guest: 4Gi
         resources: {}
-      evictionStrategy: None
       networks:
+        - name: default
+          pod: {}
         - multus:
             networkName: default/ovs-ens35
-          name: default
-      terminationGracePeriodSeconds: 3600
+          name: externalnetwork
       volumes:
         - dataVolume:
             name: "{{ item }}"
@@ -146,10 +208,7 @@
         - name: sysprep
           sysprep:
             configMap:
-              name: sysprep-win2016
-        - name: winrm
-          configMap:
-            name: winrm
+              name: sysprep-{{ item }}
   loop: "{{ vm_names }}"
   when: operating_system is match("Win.*")
 

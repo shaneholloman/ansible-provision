@@ -1,4 +1,15 @@
 ---
+- name: Delete ConfigMap for unattend.xml
+  kubernetes.core.k8s:
+    validate_certs: false
+    state: absent
+    resource_definition:
+      apiVersion: v1
+      kind: ConfigMap
+      metadata:
+        name: sysprep-{{ inventory_hostname }}
+        namespace: openshiftvms
+
 - name: Remove instance
   redhat.openshift_virtualization.kubevirt_vm:
     state: absent
