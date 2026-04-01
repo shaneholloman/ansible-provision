@@ -9,6 +9,7 @@
       metadata:
         name: sysprep-{{ inventory_hostname }}
         namespace: openshiftvms
+  delegate_to: localhost
 
 - name: Remove instance
   redhat.openshift_virtualization.kubevirt_vm:
