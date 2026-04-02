@@ -168,10 +168,10 @@
               type: tablet
           interfaces:
             - masquerade: {}
-              model: e1000e
+              model: virtio
               name: default
             - bridge: {}
-              model: e1000e
+              model: virtio
               name: externalnetwork
               state: up
           tpm:
