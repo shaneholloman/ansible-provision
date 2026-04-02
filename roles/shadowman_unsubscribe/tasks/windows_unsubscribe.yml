@@ -7,10 +7,10 @@
     domain_admin_password: "{{ domainpassword }}"
     state: workgroup
   ignore_errors: true # ignore due to WINRM issues
-  when: ansible_host != ip_addr
+  when: ansible_host != ip_addr or shadowman_provision_hypervisor|default('RHV') == "OCPV"
 
 - name: Remove Windows host from AD
-  when: ansible_host != ip_addr
+  when: ansible_host != ip_addr or shadowman_provision_hypervisor|default('RHV') == "OCPV"
   block:
     - name: Delete Windows host from AD
       microsoft.ad.computer:
