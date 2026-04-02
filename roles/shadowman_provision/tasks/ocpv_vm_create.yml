@@ -75,12 +75,22 @@
         - cloudInitNoCloud:
             userData: |-
               #cloud-config
+              disable_root: false
               user: "{{ ocp_user }}"
               password: "{{ ocp_password }}"
               ssh_pwauth: True
-              chpasswd: { expire: False }
+              chpasswd:
+                list: |
+                  root: {{ ocp_password }}
+                  {{ ocp_user }}:{{ ocp_password }}
+                expire: False
               fqdn: {{ item }}
               hostname: {{ item }}
+              runcmd:
+                - usermod -p $(echo "{{ ocp_password }}" | openssl passwd -1 -stdin) root
+                - usermod -U root
+                - sed -i 's/^#\?PermitRootLogin.*/PermitRootLogin yes/' /etc/ssh/sshd_config
+                - systemctl restart sshd
           name: cloudinitdisk
   loop: "{{ vm_names }}"
   when: operating_system is match("RHEL.*")
