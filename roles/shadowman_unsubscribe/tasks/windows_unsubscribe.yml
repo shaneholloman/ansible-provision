@@ -42,7 +42,7 @@
   delegate_to: localhost
   when: shadowman_provision_hypervisor|default('RHV') == "OCPV"
 
-- name: Create DNS A Record
+- name: Delete DNS A Record
   ansible.builtin.uri:
     url: "https://{{ IPA_HOST }}/ipa/session/json"
     method: POST
